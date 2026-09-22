@@ -1,0 +1,2262 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rogue Creamery Performance</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: #f9f9f7;
+        --surface: #fcfcfb;
+        --ink: #0b0b0b;
+        --ink-2: #52514e;
+        --muted: #898781;
+        --grid: #e1e0d9;
+        --axis: #c3c2b7;
+        --ring: rgba(11, 11, 11, 0.1);
+        --s1: #2a78d6;
+        --s2: #eb6834;
+        --s3: #1baf7a;
+        --s4: #eda100;
+        --s5: #e87ba4;
+        --s6: #008300;
+        --o1: #86b6ef;
+        --o2: #5598e7;
+        --o3: #2a78d6;
+        --o4: #1c5cab;
+        --o5: #104281;
+        --pos: #2a78d6;
+        --neg: #e34948;
+        --mid: #f0efec;
+        --up: #006300;
+        --down: #d03b3b;
+        --warn: #fab219;
+        --dim: #c3c2b7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:where(:not([data-theme="light"])) {
+          color-scheme: dark;
+          --page: #0d0d0d;
+          --surface: #1a1a19;
+          --ink: #ffffff;
+          --ink-2: #c3c2b7;
+          --muted: #898781;
+          --grid: #2c2c2a;
+          --axis: #383835;
+          --ring: rgba(255, 255, 255, 0.1);
+          --s1: #3987e5;
+          --s2: #d95926;
+          --s3: #199e70;
+          --s4: #c98500;
+          --s5: #d55181;
+          --s6: #008300;
+          --o1: #184f95;
+          --o2: #256abf;
+          --o3: #3987e5;
+          --o4: #86b6ef;
+          --o5: #b7d3f6;
+          --pos: #3987e5;
+          --neg: #e66767;
+          --mid: #383835;
+          --up: #0ca30c;
+          --down: #d03b3b;
+          --dim: #4a4a46;
+        }
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --page: #0d0d0d;
+        --surface: #1a1a19;
+        --ink: #ffffff;
+        --ink-2: #c3c2b7;
+        --muted: #898781;
+        --grid: #2c2c2a;
+        --axis: #383835;
+        --ring: rgba(255, 255, 255, 0.1);
+        --s1: #3987e5;
+        --s2: #d95926;
+        --s3: #199e70;
+        --s4: #c98500;
+        --s5: #d55181;
+        --s6: #008300;
+        --o1: #184f95;
+        --o2: #256abf;
+        --o3: #3987e5;
+        --o4: #86b6ef;
+        --o5: #b7d3f6;
+        --pos: #3987e5;
+        --neg: #e66767;
+        --mid: #383835;
+        --up: #0ca30c;
+        --down: #d03b3b;
+        --dim: #4a4a46;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--page);
+        color: var(--ink);
+        font:
+          400 15px/1.55 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 16px 72px;
+      }
+
+      /* ---------- header ---------- */
+      header {
+        padding: 40px 0 28px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .brand {
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 8px;
+      }
+      h1 {
+        font-size: clamp(26px, 4.2vw, 38px);
+        line-height: 1.12;
+        margin: 0 0 6px;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+      }
+      .sub {
+        color: var(--ink-2);
+        font-size: 14px;
+        margin: 0;
+      }
+      #theme {
+        background: var(--surface);
+        color: var(--ink-2);
+        border: 1px solid var(--ring);
+        border-radius: 999px;
+        padding: 7px 14px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+        flex: none;
+      }
+      #theme:hover {
+        color: var(--ink);
+      }
+
+      /* ---------- verdict ---------- */
+      .verdict {
+        background: var(--surface);
+        border: 1px solid var(--ring);
+        border-radius: 14px;
+        padding: 26px 28px;
+        margin-bottom: 18px;
+      }
+      .verdict p {
+        margin: 0;
+        font-size: clamp(17px, 2.2vw, 21px);
+        line-height: 1.45;
+        letter-spacing: -0.01em;
+      }
+      .verdict .em {
+        color: var(--s1);
+        font-weight: 600;
+      }
+
+      /* ---------- kpi row ---------- */
+      .kpis {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 34px;
+      }
+      .tile {
+        background: var(--surface);
+        border: 1px solid var(--ring);
+        border-radius: 14px;
+        padding: 18px 18px 14px;
+      }
+      .tile .lab {
+        font-size: 12px;
+        color: var(--muted);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin-bottom: 9px;
+      }
+      .tile .val {
+        font-size: clamp(24px, 3.2vw, 31px);
+        font-weight: 650;
+        letter-spacing: -0.025em;
+        line-height: 1.05;
+      }
+      .tile .dl {
+        font-size: 13px;
+        margin-top: 5px;
+        color: var(--ink-2);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .tile .spark {
+        margin-top: 12px;
+        display: block;
+        width: 100%;
+        height: 34px;
+        overflow: visible;
+      }
+      .tile .cap {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+      .up {
+        color: var(--up);
+        font-weight: 600;
+      }
+      .down {
+        color: var(--down);
+        font-weight: 600;
+      }
+
+      /* ---------- sections ---------- */
+      section {
+        margin: 0 0 40px;
+      }
+      .head {
+        margin: 0 0 4px;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      h2 {
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0;
+        font-weight: 600;
+      }
+      .lede {
+        font-size: clamp(18px, 2.4vw, 23px);
+        font-weight: 600;
+        letter-spacing: -0.018em;
+        margin: 6px 0 4px;
+        line-height: 1.3;
+      }
+      .note {
+        color: var(--ink-2);
+        font-size: 14.5px;
+        margin: 0 0 18px;
+        max-width: 74ch;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--ring);
+        border-radius: 14px;
+        padding: 20px;
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .grid3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .grid4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+      .ctitle {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink-2);
+        margin: 0 0 2px;
+      }
+      .csub {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 0 0 14px;
+      }
+
+      /* ---------- legend ---------- */
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        margin: 14px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .legend li {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12.5px;
+        color: var(--ink-2);
+      }
+      .swatch {
+        width: 11px;
+        height: 11px;
+        border-radius: 3px;
+        flex: none;
+      }
+
+      /* ---------- callout ---------- */
+      .callout {
+        border-left: 3px solid var(--s1);
+        background: var(--surface);
+        border-radius: 0 12px 12px 0;
+        padding: 16px 20px;
+        margin-top: 14px;
+      }
+      .callout.alert {
+        border-left-color: var(--neg);
+      }
+      .callout .big {
+        font-size: 22px;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+        display: block;
+        margin-bottom: 3px;
+      }
+      .callout p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ink-2);
+      }
+
+      /* ---------- actions ---------- */
+      .acts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 14px;
+      }
+      .act {
+        background: var(--surface);
+        border: 1px solid var(--ring);
+        border-radius: 14px;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+      .act .rank {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+      }
+      .act h3 {
+        margin: 0;
+        font-size: 15.5px;
+        font-weight: 620;
+        letter-spacing: -0.01em;
+        line-height: 1.3;
+      }
+      .act p {
+        margin: 0;
+        font-size: 13.5px;
+        color: var(--ink-2);
+        line-height: 1.5;
+      }
+      .tags {
+        display: flex;
+        gap: 6px;
+        margin-top: auto;
+        padding-top: 4px;
+        flex-wrap: wrap;
+      }
+      .tag {
+        font-size: 11px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        border: 1px solid var(--ring);
+        color: var(--ink-2);
+        white-space: nowrap;
+      }
+      .tag.hi {
+        border-color: transparent;
+        background: var(--s1);
+        color: #fff;
+      }
+
+      /* ---------- tables ---------- */
+      details.tables {
+        margin-top: 26px;
+      }
+      details.tables summary {
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--ink-2);
+        padding: 9px 0;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      details.tables summary::-webkit-details-marker {
+        display: none;
+      }
+      details.tables summary::before {
+        content: "+";
+        font-size: 15px;
+        color: var(--muted);
+      }
+      details.tables[open] summary::before {
+        content: "−";
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 13px;
+        margin: 10px 0 22px;
+        font-variant-numeric: tabular-nums;
+      }
+      caption {
+        text-align: left;
+        font-size: 12px;
+        color: var(--muted);
+        padding: 8px 0;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      th,
+      td {
+        text-align: right;
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--grid);
+      }
+      th:first-child,
+      td:first-child {
+        text-align: left;
+      }
+      thead th {
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 11.5px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--axis);
+      }
+
+      /* ---------- footer ---------- */
+      footer {
+        border-top: 1px solid var(--grid);
+        padding-top: 22px;
+        color: var(--muted);
+        font-size: 12.5px;
+        line-height: 1.65;
+      }
+      footer p {
+        margin: 0 0 8px;
+        max-width: 88ch;
+      }
+      footer b {
+        color: var(--ink-2);
+        font-weight: 600;
+      }
+
+      /* ---------- tooltip ---------- */
+      #tip {
+        position: fixed;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.11s;
+        background: var(--ink);
+        color: var(--page);
+        padding: 7px 11px;
+        border-radius: 7px;
+        font-size: 12.5px;
+        line-height: 1.45;
+        z-index: 99;
+        white-space: nowrap;
+        box-shadow: 0 6px 22px rgba(0, 0, 0, 0.24);
+        font-variant-numeric: tabular-nums;
+      }
+      #tip b {
+        color: var(--page);
+      }
+      .hit {
+        cursor: default;
+      }
+
+      /* ---------- svg text ---------- */
+      svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        overflow: visible;
+      }
+      text {
+        font:
+          400 11.5px system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        fill: var(--muted);
+      }
+      text.v {
+        fill: var(--ink);
+        font-weight: 620;
+        font-size: 12.5px;
+        font-variant-numeric: tabular-nums;
+      }
+      text.lbl {
+        fill: var(--ink-2);
+        font-size: 12px;
+      }
+      .gridline {
+        stroke: var(--grid);
+        stroke-width: 1;
+      }
+      .axisline {
+        stroke: var(--axis);
+        stroke-width: 1;
+      }
+
+      @media (max-width: 900px) {
+        .kpis {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .grid2,
+        .grid3,
+        .grid4 {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 560px) {
+        header {
+          padding: 26px 0 20px;
+        }
+        .verdict {
+          padding: 20px;
+        }
+        .kpis {
+          gap: 10px;
+        }
+        .tile {
+          padding: 14px;
+        }
+      }
+      @media print {
+        #theme,
+        details.tables summary {
+          display: none;
+        }
+        details.tables {
+          display: block;
+        }
+        body {
+          background: #fff;
+        }
+        section {
+          break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="tip" role="status" aria-live="polite"></div>
+    <div class="wrap">
+      <header>
+        <div>
+          <p class="brand">Ongoing SEO &middot; Rogue Creamery</p>
+          <h1>Performance Dashboard</h1>
+          <p class="sub" id="period"></p>
+        </div>
+        <button id="theme" type="button">Dark</button>
+      </header>
+
+      <div class="verdict"><p id="verdict"></p></div>
+      <div class="kpis" id="kpis"></div>
+
+      <section>
+        <div class="head"><h2>The four months</h2></div>
+        <p class="lede">March was the anomaly, not April.</p>
+        <p class="note">
+          Months have different lengths, so both charts show a daily average.
+          February covers 28 days; January, March and April cover 30 each. On
+          that basis April earned 22.4% more per day than January, 39.4% more
+          than February, and sat 29.6% below March.
+        </p>
+        <div class="grid2">
+          <div class="card">
+            <p class="ctitle">Revenue per day</p>
+            <p class="csub">
+              Daily average, US dollars · January to April 2026
+            </p>
+            <div id="c-rev"></div>
+          </div>
+          <div class="card">
+            <p class="ctitle">Orders per day</p>
+            <p class="csub">
+              Daily average of completed purchases · January to April 2026
+            </p>
+            <div id="c-ord"></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="head"><h2>Where the money comes from</h2></div>
+        <p class="lede">One channel carries roughly half of all revenue.</p>
+        <p class="note">
+          Email produced 62.1% of March revenue and 47.1% of April's. The March
+          peak and the April decline are largely the same story: campaign volume
+          rose, then returned to normal. Channel-level revenue is available from
+          February onward.
+        </p>
+        <div class="card">
+          <p class="ctitle">Share of revenue by channel</p>
+          <p class="csub">Percentage of monthly total</p>
+          <div id="c-mix"></div>
+          <ul class="legend" id="l-mix"></ul>
+        </div>
+        <div class="callout">
+          <span class="big" id="conc"></span>
+          <p>
+            Concentration eased in April, but a single channel at this level
+            means a quiet campaign month reads as a steep revenue drop even when
+            the site performs identically.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <div class="head"><h2>Channel yield</h2></div>
+        <p class="lede">The best-earning traffic is not the biggest traffic.</p>
+        <p class="note">
+          Each bubble is a channel in April. Horizontal position is how much
+          traffic it sent, vertical position is how much revenue each session
+          produced, and bubble size is total revenue. The two channels in the
+          upper left, SMS and Organic Shopping, earned five to six dollars per
+          session in April on almost no volume.
+        </p>
+        <div class="card">
+          <p class="ctitle">Revenue per session against sessions</p>
+          <p class="csub">
+            April 2026 &middot; channels with 100 or more sessions
+          </p>
+          <div id="c-scatter"></div>
+        </div>
+      </section>
+
+      <section>
+        <div class="head"><h2>The funnel</h2></div>
+        <p class="lede">
+          Product pages improved every month. The cart broke in April.
+        </p>
+        <p class="note">
+          Percentages are the share of users at each stage who reached the next
+          one, counted as unique users. User-level funnel data starts in
+          February. Product view to cart rose in every month measured. Cart to
+          checkout slipped in March and fell sharply in April, which is where
+          the month lost its orders.
+        </p>
+        <div class="card">
+          <p class="ctitle">April funnel</p>
+          <p class="csub">
+            Unique users at each stage, April 1-30, with the share advancing to
+            the next and the March rate for comparison
+          </p>
+          <div id="c-funnel"></div>
+        </div>
+        <div class="grid4" style="margin-top: 14px" id="c-steps"></div>
+        <div class="callout alert">
+          <span class="big" id="recover"></span>
+          <p>
+            If the share of cart users who started checkout had held at March's
+            73.15% and the later stages performed exactly as they did in April,
+            about that many more users would have purchased. The dollar value
+            applies April's average order. This is the single largest
+            recoverable gap in the data.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <div class="head"><h2>Pages</h2></div>
+        <p class="lede">Traffic moved back to category browsing.</p>
+        <p class="note">
+          Change in page views, April against March, for April's ten most-viewed
+          pages. Collection pages grew while the flagship product page fell, the
+          reverse of March, when email campaigns sent visitors straight to
+          product pages.
+        </p>
+        <div class="card"><div id="c-pages"></div></div>
+      </section>
+
+      <section>
+        <div class="head"><h2>Engagement quality</h2></div>
+        <p class="lede">Fewer visitors, each worth more attention.</p>
+        <p class="note">
+          Every engagement measure improved in April against March, even as
+          sessions fell 14.50%. The sessions that disappeared were largely short
+          campaign visits; what remained engaged more deeply.
+        </p>
+        <div class="grid3" id="c-quality"></div>
+      </section>
+
+      <section>
+        <div class="head"><h2>What to do next</h2></div>
+        <p class="lede">Five priorities for the next cycle.</p>
+        <div class="acts" id="acts"></div>
+      </section>
+
+      <details class="tables">
+        <summary>Show the underlying data tables</summary>
+        <div id="tables"></div>
+      </details>
+
+      <footer>
+        <p>
+          <b>Windows.</b> January 1-30, February 1-28, March 1-30 and April
+          1-30, 2026. Volume metrics are shown as daily averages wherever the
+          months are compared side by side; rates and ratios are independent of
+          window length and are shown directly. January figures come from the
+          February-March report and cover January 1-30; channel-level revenue is
+          not available for January.
+        </p>
+        <p>
+          <b>Definitions.</b> Orders are completed purchase events. The funnel
+          is measured on unique users, because the same visitor can fire an
+          event several times (add_to_cart about 2.6 times per user in April).
+          Unique users per stage are not strictly nested, so the rates are close
+          approximations. Event-count rates appear in the data tables as a
+          cross-check; the View to order tile uses event counts because
+          user-level data is not available for January. Revenue is recorded
+          against the purchase event and is not attributable to individual
+          pages. The scroll event is excluded throughout: GA4 records it only at
+          90% page depth and it fires on roughly 5% of page views, so its
+          measurement is being verified before use.
+        </p>
+        <p style="margin-top: 14px">
+          Full analysis in the monthly reports:
+          <b>Analytics Report, March 2026</b> and
+          <b>Analytics Report, April 2026</b>.
+        </p>
+      </footer>
+    </div>
+    <script>
+      const DATA = {
+        months: [
+          {
+            name: "Jan",
+            label: "January",
+            days: 30,
+            sessions: 20535,
+            engaged: 10803,
+            engRate: 52.61,
+            engPerSession: 57.0,
+            eventsPerSession: 6.93,
+            events: 142383,
+            revenue: 31191.09,
+            purchases: 358,
+            aov: 87.13,
+            users: null,
+            newUsers: 14051,
+            viewItem: 19834,
+            addToCart: 2270,
+            beginCheckout: 908,
+            addPayment: 695,
+            pageView: 46462,
+            revPerDay: 1039.7,
+            sessionsPerDay: 684.5,
+            purchasesPerDay: 11.93,
+            cartsPerDay: 75.7,
+            f1: 11.44,
+            f2: 40.0,
+            f3: 76.54,
+            f4: 51.51,
+            e2e: 1.8,
+            revPerSession: 1.52,
+            fu: null,
+          },
+          {
+            name: "Feb",
+            label: "February",
+            days: 28,
+            sessions: 15154.0,
+            engaged: 7824.0,
+            engRate: 51.63,
+            engPerSession: 57.7,
+            eventsPerSession: 7.19,
+            events: 109003.0,
+            revenue: 25554.95,
+            purchases: 284,
+            aov: 89.98,
+            users: 11309,
+            newUsers: 10473,
+            viewItem: 14472,
+            addToCart: 1661,
+            beginCheckout: 725,
+            addPayment: 543,
+            pageView: 35268,
+            revPerDay: 912.68,
+            sessionsPerDay: 541.2,
+            purchasesPerDay: 10.14,
+            cartsPerDay: 59.3,
+            f1: 11.48,
+            f2: 43.65,
+            f3: 74.9,
+            f4: 52.3,
+            e2e: 1.96,
+            revPerSession: 1.69,
+            fu: [5974, 632, 484, 295, 276],
+          },
+          {
+            name: "Mar",
+            label: "March",
+            days: 30,
+            sessions: 17056.0,
+            engaged: 8559.0,
+            engRate: 50.18,
+            engPerSession: 59.0,
+            eventsPerSession: 7.17,
+            events: 122314.0,
+            revenue: 54217.98,
+            purchases: 579,
+            aov: 93.64,
+            users: 12197,
+            newUsers: 11269,
+            viewItem: 16231,
+            addToCart: 2581,
+            beginCheckout: 1226,
+            addPayment: 1023,
+            pageView: 40416,
+            revPerDay: 1807.27,
+            sessionsPerDay: 568.5,
+            purchasesPerDay: 19.3,
+            cartsPerDay: 86.0,
+            f1: 15.9,
+            f2: 47.5,
+            f3: 83.44,
+            f4: 56.6,
+            e2e: 3.57,
+            revPerSession: 3.18,
+            fu: [6712, 1054, 771, 553, 549],
+          },
+          {
+            name: "Apr",
+            label: "April",
+            days: 30,
+            sessions: 14583.0,
+            engaged: 7699.0,
+            engRate: 52.79,
+            engPerSession: 62.9,
+            eventsPerSession: 7.48,
+            events: 109050.0,
+            revenue: 38165.87,
+            purchases: 440,
+            aov: 86.74,
+            users: 10405,
+            newUsers: 9626,
+            viewItem: 14342,
+            addToCart: 2601,
+            beginCheckout: 1022,
+            addPayment: 833,
+            pageView: 35894,
+            revPerDay: 1272.2,
+            sessionsPerDay: 486.1,
+            purchasesPerDay: 14.67,
+            cartsPerDay: 86.7,
+            f1: 18.14,
+            f2: 39.29,
+            f3: 81.51,
+            f4: 52.82,
+            e2e: 3.07,
+            revPerSession: 2.62,
+            fu: [5859, 1004, 659, 445, 414],
+          },
+        ],
+        channels: {
+          Feb: {
+            Email: {
+              sessions: 3340,
+              revenue: 10889.6,
+              engRate: 54.19,
+              keyEvents: 111,
+              revPerSession: 3.26,
+            },
+            Direct: {
+              sessions: 3575,
+              revenue: 3439.72,
+              engRate: 30.27,
+              keyEvents: 38,
+              revPerSession: 0.96,
+            },
+            "Organic Search": {
+              sessions: 3465,
+              revenue: 3892.5,
+              engRate: 59.11,
+              keyEvents: 48,
+              revPerSession: 1.12,
+            },
+            "Cross-network": {
+              sessions: 1319,
+              revenue: 2345.49,
+              engRate: 64.9,
+              keyEvents: 27,
+              revPerSession: 1.78,
+            },
+            "Paid Search": {
+              sessions: 2343,
+              revenue: 3633.94,
+              engRate: 63.94,
+              keyEvents: 44,
+              revPerSession: 1.55,
+            },
+            Unassigned: {
+              sessions: 353,
+              revenue: 147.25,
+              engRate: 26.35,
+              keyEvents: 2,
+              revPerSession: 0.42,
+            },
+            Referral: {
+              sessions: 226,
+              revenue: 496.1,
+              engRate: 68.58,
+              keyEvents: 6,
+              revPerSession: 2.2,
+            },
+            "Organic Shopping": {
+              sessions: 145,
+              revenue: 399.15,
+              engRate: 59.31,
+              keyEvents: 4,
+              revPerSession: 2.75,
+            },
+            SMS: {
+              sessions: 180,
+              revenue: 222.2,
+              engRate: 53.89,
+              keyEvents: 3,
+              revPerSession: 1.23,
+            },
+            "Organic Social": {
+              sessions: 176,
+              revenue: 89.0,
+              engRate: 52.27,
+              keyEvents: 1,
+              revPerSession: 0.51,
+            },
+            Display: {
+              sessions: 32,
+              revenue: 0.0,
+              engRate: 21.88,
+              keyEvents: 0,
+              revPerSession: 0.0,
+            },
+          },
+          Mar: {
+            "Organic Search": {
+              sessions: 2893,
+              revenue: 3393.72,
+              engRate: 57.66,
+              keyEvents: 36,
+              revPerSession: 1.17,
+            },
+            Direct: {
+              sessions: 3778,
+              revenue: 3854.82,
+              engRate: 31.34,
+              keyEvents: 38,
+              revPerSession: 1.02,
+            },
+            Email: {
+              sessions: 5021,
+              revenue: 33643.7,
+              engRate: 49.19,
+              keyEvents: 371,
+              revPerSession: 6.7,
+            },
+            "Cross-network": {
+              sessions: 2449,
+              revenue: 5458.14,
+              engRate: 63.17,
+              keyEvents: 58,
+              revPerSession: 2.23,
+            },
+            "Paid Search": {
+              sessions: 1695,
+              revenue: 4040.85,
+              engRate: 65.37,
+              keyEvents: 43,
+              revPerSession: 2.38,
+            },
+            Unassigned: {
+              sessions: 359,
+              revenue: 160.0,
+              engRate: 20.89,
+              keyEvents: 1,
+              revPerSession: 0.45,
+            },
+            "Organic Shopping": {
+              sessions: 238,
+              revenue: 2359.8,
+              engRate: 57.14,
+              keyEvents: 18,
+              revPerSession: 9.92,
+            },
+            SMS: {
+              sessions: 171,
+              revenue: 530.0,
+              engRate: 46.78,
+              keyEvents: 7,
+              revPerSession: 3.1,
+            },
+            Referral: {
+              sessions: 312,
+              revenue: 456.95,
+              engRate: 65.38,
+              keyEvents: 4,
+              revPerSession: 1.46,
+            },
+            "Organic Social": {
+              sessions: 137,
+              revenue: 320.0,
+              engRate: 62.04,
+              keyEvents: 3,
+              revPerSession: 2.34,
+            },
+            Display: {
+              sessions: 2,
+              revenue: 0.0,
+              engRate: 50.0,
+              keyEvents: 0,
+              revPerSession: 0.0,
+            },
+            "Organic Video": {
+              sessions: 1,
+              revenue: 0.0,
+              engRate: 100.0,
+              keyEvents: 0,
+              revPerSession: 0.0,
+            },
+          },
+          Apr: {
+            "Organic Search": {
+              sessions: 3038,
+              revenue: 3098.0,
+              engRate: 58.46,
+              keyEvents: 35,
+              revPerSession: 1.02,
+            },
+            Direct: {
+              sessions: 3034,
+              revenue: 4557.68,
+              engRate: 34.97,
+              keyEvents: 45,
+              revPerSession: 1.5,
+            },
+            Email: {
+              sessions: 3017,
+              revenue: 17987.25,
+              engRate: 53.46,
+              keyEvents: 227,
+              revPerSession: 5.96,
+            },
+            "Cross-network": {
+              sessions: 2305,
+              revenue: 4698.35,
+              engRate: 61.39,
+              keyEvents: 52,
+              revPerSession: 2.04,
+            },
+            "Paid Search": {
+              sessions: 1775,
+              revenue: 4192.26,
+              engRate: 63.55,
+              keyEvents: 39,
+              revPerSession: 2.36,
+            },
+            "Paid Shopping": {
+              sessions: 277,
+              revenue: 299.0,
+              engRate: 49.46,
+              keyEvents: 3,
+              revPerSession: 1.08,
+            },
+            Unassigned: {
+              sessions: 272,
+              revenue: 427.85,
+              engRate: 26.84,
+              keyEvents: 6,
+              revPerSession: 1.57,
+            },
+            "Organic Shopping": {
+              sessions: 237,
+              revenue: 1201.23,
+              engRate: 62.03,
+              keyEvents: 14,
+              revPerSession: 5.07,
+            },
+            SMS: {
+              sessions: 234,
+              revenue: 1362.0,
+              engRate: 46.58,
+              keyEvents: 13,
+              revPerSession: 5.82,
+            },
+            Referral: {
+              sessions: 226,
+              revenue: 199.5,
+              engRate: 62.83,
+              keyEvents: 3,
+              revPerSession: 0.88,
+            },
+            "Organic Social": {
+              sessions: 168,
+              revenue: 142.75,
+              engRate: 58.33,
+              keyEvents: 3,
+              revPerSession: 0.85,
+            },
+          },
+        },
+        pages: [
+          {
+            path: "/",
+            views: 6143,
+            prev: 7235,
+            users: 4265,
+            eng: 28.7,
+            change: -15.09,
+          },
+          {
+            path: "/products/rogue-river-blue-cheese",
+            views: 4423,
+            prev: 5579,
+            users: 2953,
+            eng: 42.4,
+            change: -20.72,
+          },
+          {
+            path: "/cart",
+            views: 2526,
+            prev: 2741,
+            users: 917,
+            eng: 60.1,
+            change: -7.84,
+          },
+          {
+            path: "/collections/all-products",
+            views: 1572,
+            prev: 1309,
+            users: 1011,
+            eng: 38.4,
+            change: 20.09,
+          },
+          {
+            path: "/collections/blue-cheeses",
+            views: 1444,
+            prev: 1037,
+            users: 1081,
+            eng: 24.1,
+            change: 39.25,
+          },
+          {
+            path: "/products/bluzu-blue-cheese",
+            views: 1118,
+            prev: 0,
+            users: 809,
+            eng: 34.9,
+            change: null,
+          },
+          {
+            path: "/pages/central-point-cheese-shop",
+            views: 932,
+            prev: 1155,
+            users: 673,
+            eng: 38.1,
+            change: -19.31,
+          },
+          {
+            path: "/collections/cheeses",
+            views: 833,
+            prev: 957,
+            users: 622,
+            eng: 33.4,
+            change: -12.96,
+          },
+          {
+            path: "/collections/gift-sets",
+            views: 734,
+            prev: 815,
+            users: 474,
+            eng: 41.9,
+            change: -9.94,
+          },
+          {
+            path: "/products/oregon-blue-cheese",
+            views: 708,
+            prev: 697,
+            users: 572,
+            eng: 27.2,
+            change: 1.58,
+          },
+        ],
+        mix: {
+          Feb: {
+            total: 25554.95,
+            rows: [
+              { name: "Email", revenue: 10889.6, share: 42.6 },
+              { name: "Organic Search", revenue: 3892.5, share: 15.2 },
+              { name: "Direct", revenue: 3439.72, share: 13.5 },
+              { name: "Cross-network", revenue: 2345.49, share: 9.2 },
+              { name: "Paid Search", revenue: 3633.94, share: 14.2 },
+              { name: "Other", revenue: 1353.7, share: 5.3 },
+            ],
+          },
+          Mar: {
+            total: 54217.98,
+            rows: [
+              { name: "Email", revenue: 33643.7, share: 62.1 },
+              { name: "Organic Search", revenue: 3393.72, share: 6.3 },
+              { name: "Direct", revenue: 3854.82, share: 7.1 },
+              { name: "Cross-network", revenue: 5458.14, share: 10.1 },
+              { name: "Paid Search", revenue: 4040.85, share: 7.5 },
+              { name: "Other", revenue: 3826.75, share: 7.1 },
+            ],
+          },
+          Apr: {
+            total: 38165.87,
+            rows: [
+              { name: "Email", revenue: 17987.25, share: 47.1 },
+              { name: "Organic Search", revenue: 3098.0, share: 8.1 },
+              { name: "Direct", revenue: 4557.68, share: 11.9 },
+              { name: "Cross-network", revenue: 4698.35, share: 12.3 },
+              { name: "Paid Search", revenue: 4192.26, share: 11.0 },
+              { name: "Other", revenue: 3632.33, share: 9.5 },
+            ],
+          },
+        },
+        scatter: [
+          { name: "Email", sessions: 3017, rps: 5.96, revenue: 17987.25 },
+          {
+            name: "Cross-network",
+            sessions: 2305,
+            rps: 2.04,
+            revenue: 4698.35,
+          },
+          { name: "Direct", sessions: 3034, rps: 1.5, revenue: 4557.68 },
+          { name: "Paid Search", sessions: 1775, rps: 2.36, revenue: 4192.26 },
+          {
+            name: "Organic Search",
+            sessions: 3038,
+            rps: 1.02,
+            revenue: 3098.0,
+          },
+          { name: "SMS", sessions: 234, rps: 5.82, revenue: 1362.0 },
+          {
+            name: "Organic Shopping",
+            sessions: 237,
+            rps: 5.07,
+            revenue: 1201.23,
+          },
+          { name: "Unassigned", sessions: 272, rps: 1.57, revenue: 427.85 },
+          { name: "Paid Shopping", sessions: 277, rps: 1.08, revenue: 299.0 },
+          { name: "Referral", sessions: 226, rps: 0.88, revenue: 199.5 },
+          { name: "Organic Social", sessions: 168, rps: 0.85, revenue: 142.75 },
+        ],
+      };
+      const M = DATA.months,
+        byName = Object.fromEntries(M.map((m) => [m.name, m]));
+      const APR = byName.Apr,
+        MAR = byName.Mar,
+        FEB = byName.Feb,
+        JAN = byName.Jan;
+
+      /* ---------- helpers ---------- */
+      const $ = (s) => document.querySelector(s);
+      const NS = "http://www.w3.org/2000/svg";
+      const money = (n) => "$" + Math.round(n).toLocaleString("en-US");
+      const money2 = (n) =>
+        "$" +
+        n.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+      const num = (n) => Math.round(n).toLocaleString("en-US");
+      const pct = (n) => (n > 0 ? "+" : "") + n.toFixed(2) + "%";
+      const chg = (a, b) => ((a - b) / b) * 100;
+
+      function el(tag, attrs = {}, text) {
+        const n = document.createElementNS(NS, tag);
+        for (const k in attrs) n.setAttribute(k, attrs[k]);
+        if (text != null) n.textContent = text;
+        return n;
+      }
+      function svg(w, h) {
+        const s = el("svg", {
+          viewBox: `0 0 ${w} ${h}`,
+          preserveAspectRatio: "xMidYMid meet",
+          role: "img",
+        });
+        return s;
+      }
+      /* rounded only on the data end (top of a column, right of a row) */
+      function colPath(x, y, w, h, r) {
+        r = Math.min(r, w / 2, h);
+        if (h <= 0.5) return `M${x} ${y + h}h${w}`;
+        return `M${x} ${y + h}V${y + r}a${r} ${r} 0 0 1 ${r} ${-r}h${w - 2 * r}a${r} ${r} 0 0 1 ${r} ${r}V${y + h}Z`;
+      }
+      function rowPath(x, y, w, h, r) {
+        r = Math.min(r, h / 2, w);
+        if (w <= 0.5) return `M${x} ${y}v${h}`;
+        return `M${x} ${y}h${w - r}a${r} ${r} 0 0 1 ${r} ${r}v${h - 2 * r}a${r} ${r} 0 0 1 ${-r} ${r}H${x}Z`;
+      }
+
+      /* ---------- tooltip ---------- */
+      const tip = $("#tip");
+      function bindTip(node, html) {
+        node.classList.add("hit");
+        node.addEventListener("pointerenter", (e) => {
+          tip.innerHTML = html;
+          tip.style.opacity = 1;
+          move(e);
+        });
+        node.addEventListener("pointermove", move);
+        node.addEventListener("pointerleave", () => (tip.style.opacity = 0));
+        function move(e) {
+          const r = tip.getBoundingClientRect();
+          let x = e.clientX + 14,
+            y = e.clientY - r.height - 12;
+          if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 14;
+          if (y < 8) y = e.clientY + 18;
+          tip.style.left = x + "px";
+          tip.style.top = y + "px";
+        }
+      }
+
+      /* ---------- header ---------- */
+      $("#period").textContent =
+        "January to April 2026 · four reporting periods";
+      $("#verdict").innerHTML =
+        'April closed at <span class="em">' +
+        money2(APR.revenue) +
+        "</span> against " +
+        money2(MAR.revenue) +
+        " in March, but March was an exceptional month driven by email campaigns. Measured per day, April earned " +
+        '<span class="em">22.4% more than January and 39.4% more than February</span>. Product pages converted better than in any prior month, ' +
+        "and organic search sessions grew against March for the first time in the series. The month lost its orders at one specific place: " +
+        '<span class="em">the step between cart and checkout</span>.';
+
+      /* ---------- KPI tiles ---------- */
+      function spark(vals, w = 210, h = 34) {
+        const s = svg(w, h);
+        s.classList.add("spark");
+        const mn = Math.min(...vals),
+          mx = Math.max(...vals),
+          pad = 4;
+        const X = (i) => (i / (vals.length - 1)) * (w - 12) + 6;
+        const Y = (v) =>
+          h - pad - (mx === mn ? 0.5 : (v - mn) / (mx - mn)) * (h - pad * 2);
+        s.appendChild(
+          el("path", {
+            d: vals
+              .map((v, i) => (i ? "L" : "M") + X(i) + " " + Y(v))
+              .join(" "),
+            fill: "none",
+            stroke: "var(--s1)",
+            "stroke-width": 2,
+            "stroke-linecap": "round",
+            "stroke-linejoin": "round",
+          }),
+        );
+        vals.forEach((v, i) => {
+          const last = i === vals.length - 1;
+          s.appendChild(
+            el("circle", {
+              cx: X(i),
+              cy: Y(v),
+              r: last ? 4 : 2.6,
+              fill: last ? "var(--s1)" : "var(--surface)",
+              stroke: "var(--s1)",
+              "stroke-width": 2,
+            }),
+          );
+        });
+        return s;
+      }
+      const KPI = [
+        {
+          lab: "Revenue · April",
+          val: money(APR.revenue),
+          series: M.map((m) => m.revPerDay),
+          d: chg(APR.revenue, MAR.revenue),
+          foot: "April vs March",
+          cap: "Trend: revenue per day, Jan to Apr",
+        },
+        {
+          lab: "Orders · April",
+          val: num(APR.purchases),
+          series: M.map((m) => m.purchasesPerDay),
+          d: chg(APR.purchases, MAR.purchases),
+          foot: "April vs March",
+          cap: "Trend: orders per day, Jan to Apr",
+        },
+        {
+          lab: "Sessions · April",
+          val: num(APR.sessions),
+          series: M.map((m) => m.sessionsPerDay),
+          d: chg(APR.sessions, MAR.sessions),
+          foot: "April vs March",
+          cap: "Trend: sessions per day, Jan to Apr",
+        },
+        {
+          lab: "View to order · April",
+          val: APR.e2e.toFixed(2) + "%",
+          series: M.map((m) => m.e2e),
+          d: chg(APR.purchases / APR.viewItem, JAN.purchases / JAN.viewItem),
+          foot: "April vs January",
+          cap: "Orders ÷ product views, event counts, Jan to Apr",
+        },
+      ];
+      const kpiBox = $("#kpis");
+      KPI.forEach((k) => {
+        const d = document.createElement("div");
+        d.className = "tile";
+        d.innerHTML = `<div class="lab">${k.lab}</div><div class="val">${k.val}</div>
+    <div class="dl"><span class="${k.d >= 0 ? "up" : "down"}">${k.d >= 0 ? "▲" : "▼"} ${pct(k.d)}</span><span>${k.foot}</span></div>`;
+        d.appendChild(spark(k.series));
+        d.insertAdjacentHTML("beforeend", `<div class="cap">${k.cap}</div>`);
+        kpiBox.appendChild(d);
+      });
+
+      /* ---------- column charts ---------- */
+      function columns(host, vals, fmt, tipFmt) {
+        const w = 400,
+          h = 236,
+          L = 8,
+          R = 8,
+          T = 30,
+          B = 30;
+        const s = svg(w, h),
+          mx = Math.max(...vals.map((v) => v.v)) * 1.16;
+        const bw = (w - L - R) / vals.length,
+          cw = Math.min(58, bw - 20);
+        [0, 0.5, 1].forEach((f) => {
+          const y = T + (1 - f) * (h - T - B);
+          s.appendChild(
+            el("line", {
+              x1: L,
+              x2: w - R,
+              y1: y,
+              y2: y,
+              class: f ? "gridline" : "axisline",
+            }),
+          );
+        });
+        vals.forEach((d, i) => {
+          const x = L + bw * i + (bw - cw) / 2;
+          const bh = (d.v / mx) * (h - T - B),
+            y = h - B - bh;
+          const p = el("path", {
+            d: colPath(x, y, cw, bh, 4),
+            fill: d.hi ? "var(--s1)" : "var(--dim)",
+          });
+          bindTip(p, tipFmt(d));
+          s.appendChild(p);
+          s.appendChild(
+            el(
+              "text",
+              { x: x + cw / 2, y: y - 9, "text-anchor": "middle", class: "v" },
+              fmt(d.v),
+            ),
+          );
+          s.appendChild(
+            el(
+              "text",
+              { x: x + cw / 2, y: h - B + 17, "text-anchor": "middle" },
+              d.k,
+            ),
+          );
+        });
+        host.appendChild(s);
+      }
+      columns(
+        $("#c-rev"),
+        M.map((m) => ({ k: m.name, v: m.revPerDay, hi: m.name === "Apr", m })),
+        (v) => "$" + num(v),
+        (d) =>
+          `<b>${d.m.label}</b><br>${money2(d.m.revPerDay)} per day<br>${money2(d.m.revenue)} over ${d.m.days} days`,
+      );
+      columns(
+        $("#c-ord"),
+        M.map((m) => ({
+          k: m.name,
+          v: m.purchasesPerDay,
+          hi: m.name === "Apr",
+          m,
+        })),
+        (v) => v.toFixed(1),
+        (d) =>
+          `<b>${d.m.label}</b><br>${d.m.purchasesPerDay} orders per day<br>${num(d.m.purchases)} orders · ${money2(d.m.aov)} average`,
+      );
+
+      /* ---------- stacked channel mix ---------- */
+      const MIXC = [
+        "var(--s1)",
+        "var(--s2)",
+        "var(--s3)",
+        "var(--s4)",
+        "var(--s5)",
+        "var(--s6)",
+      ];
+      (function mix() {
+        const keys = ["Feb", "Mar", "Apr"],
+          w = 760,
+          rowH = 58,
+          gap = 16,
+          L = 46,
+          R = 8;
+        const h = keys.length * (rowH + gap) + 6,
+          s = svg(w, h),
+          bw = w - L - R;
+        keys.forEach((k, i) => {
+          const y = i * (rowH + gap),
+            rows = DATA.mix[k].rows;
+          s.appendChild(
+            el("text", { x: 0, y: y + rowH / 2 + 4, class: "lbl" }, k),
+          );
+          let x = L;
+          rows.forEach((r, j) => {
+            const segW = (r.share / 100) * bw;
+            if (segW <= 0) return;
+            const p = el("path", {
+              d: rowPath(
+                x,
+                y,
+                Math.max(segW - 2, 1),
+                rowH,
+                j === rows.length - 1 ? 4 : 0,
+              ),
+              fill: MIXC[j],
+            });
+            bindTip(
+              p,
+              `<b>${r.name}</b> · ${k}<br>${money2(r.revenue)}<br>${r.share}% of the month`,
+            );
+            s.appendChild(p);
+            /* label only slot 1 inside the bar: white clears contrast on blue but not on the
+         lighter slots. Every other share stays in the legend, tooltip and table view. */
+            if (j === 0 && segW > 64)
+              s.appendChild(
+                el(
+                  "text",
+                  {
+                    x: x + segW / 2 - 1,
+                    y: y + rowH / 2 + 5,
+                    "text-anchor": "middle",
+                    style: "fill:#fff;font-weight:640;font-size:13.5px",
+                  },
+                  "Email " + r.share + "%",
+                ),
+              );
+            x += segW;
+          });
+          s.appendChild(
+            el(
+              "text",
+              { x: w - R, y: y - 3, "text-anchor": "end" },
+              "Total " + money(DATA.mix[k].total),
+            ),
+          );
+        });
+        $("#c-mix").appendChild(s);
+        const lg = $("#l-mix");
+        DATA.mix.Apr.rows.forEach((r, j) => {
+          const li = document.createElement("li");
+          li.innerHTML = `<span class="swatch" style="background:${MIXC[j]}"></span>${r.name}`;
+          lg.appendChild(li);
+        });
+      })();
+      $("#conc").textContent =
+        "Email share of revenue: Feb " +
+        DATA.mix.Feb.rows[0].share +
+        "% → Mar " +
+        DATA.mix.Mar.rows[0].share +
+        "% → Apr " +
+        DATA.mix.Apr.rows[0].share +
+        "%";
+
+      /* ---------- scatter ---------- */
+      (function scatter() {
+        const w = 760,
+          h = 430,
+          L = 54,
+          R = 20,
+          T = 46,
+          B = 44;
+        const s = svg(w, h),
+          pts = DATA.scatter;
+        const mxS = Math.max(...pts.map((p) => p.sessions)) * 1.12;
+        const mxR = Math.max(...pts.map((p) => p.rps)) * 1.15;
+        const mxRev = Math.max(...pts.map((p) => p.revenue));
+        const X = (v) => L + (v / mxS) * (w - L - R);
+        const Y = (v) => h - B - (v / mxR) * (h - T - B);
+        const Rad = (v) => 7 + Math.sqrt(v / mxRev) * 26;
+        for (let i = 0; i <= 3; i++) {
+          const v = (mxR * i) / 3,
+            y = Y(v);
+          s.appendChild(
+            el("line", {
+              x1: L,
+              x2: w - R,
+              y1: y,
+              y2: y,
+              class: i ? "gridline" : "axisline",
+            }),
+          );
+          s.appendChild(
+            el(
+              "text",
+              { x: L - 10, y: y + 4, "text-anchor": "end" },
+              "$" + v.toFixed(2),
+            ),
+          );
+        }
+        for (let i = 0; i <= 3; i++) {
+          const v = (mxS * i) / 3;
+          s.appendChild(
+            el(
+              "text",
+              { x: X(v), y: h - B + 18, "text-anchor": "middle" },
+              num(v),
+            ),
+          );
+        }
+        s.appendChild(
+          el(
+            "text",
+            {
+              x: (L + w - R) / 2,
+              y: h - 6,
+              "text-anchor": "middle",
+              class: "lbl",
+            },
+            "Sessions",
+          ),
+        );
+        /* axis title sits above the plot band so it never lands on the top tick */
+        s.appendChild(
+          el("text", { x: 0, y: 14, class: "lbl" }, "Revenue per session"),
+        );
+
+        /* place labels, then push apart any that would collide vertically on the same side */
+        const labels = [];
+        pts
+          .slice()
+          .sort((a, b) => b.revenue - a.revenue)
+          .forEach((p) => {
+            const cx = X(p.sessions),
+              cy = Y(p.rps),
+              r = Rad(p.revenue);
+            const c = el("circle", {
+              cx,
+              cy,
+              r,
+              fill: "var(--s1)",
+              "fill-opacity": 0.26,
+              stroke: "var(--s1)",
+              "stroke-width": 2,
+            });
+            bindTip(
+              c,
+              `<b>${p.name}</b><br>${num(p.sessions)} sessions<br>${money2(p.rps)} per session<br>${money2(p.revenue)} total`,
+            );
+            s.appendChild(c);
+            if (p.revenue > mxRev * 0.06) {
+              /* label to the right unless the bubble is near the right edge, so a label never
+         runs leftward across a neighbouring bubble */
+              const right = cx < w * 0.75;
+              labels.push({
+                name: p.name,
+                right,
+                x: right ? cx + r + 8 : cx - r - 8,
+                y: cy + 4,
+              });
+            }
+          });
+        [true, false].forEach((side) => {
+          const set = labels
+            .filter((l) => l.right === side)
+            .sort((a, b) => a.y - b.y);
+          for (let i = 1; i < set.length; i++)
+            if (set[i].y - set[i - 1].y < 19) set[i].y = set[i - 1].y + 19;
+        });
+        labels.forEach((l) =>
+          s.appendChild(
+            el(
+              "text",
+              {
+                x: l.x,
+                y: l.y,
+                "text-anchor": l.right ? "start" : "end",
+                class: "lbl",
+              },
+              l.name,
+            ),
+          ),
+        );
+        $("#c-scatter").appendChild(s);
+      })();
+
+      /* ---------- funnel (unique users; fu = view_item, add_to_cart, begin_checkout, add_payment_info, purchase) ---------- */
+      const STEPS = [
+        "Viewed a product",
+        "Added to cart",
+        "Started checkout",
+        "Entered payment",
+        "Purchased",
+      ];
+      const rate = (m, i) => (m.fu[i + 1] / m.fu[i]) * 100;
+      const FM = M.filter((m) => m.fu);
+      const OC = [
+        "var(--o1)",
+        "var(--o2)",
+        "var(--o3)",
+        "var(--o4)",
+        "var(--o5)",
+      ];
+      (function funnel() {
+        const w = 760,
+          rowH = 46,
+          gap = 26,
+          L = 140,
+          R = 116;
+        const h = STEPS.length * (rowH + gap),
+          s = svg(w, h),
+          bw = w - L - R;
+        const mx = APR.fu[0];
+        STEPS.forEach((n, i) => {
+          const y = i * (rowH + gap),
+            v = APR.fu[i],
+            segW = Math.max((v / mx) * bw, 3);
+          s.appendChild(
+            el("text", { x: 0, y: y + rowH / 2 + 4, class: "lbl" }, n),
+          );
+          const p = el("path", {
+            d: rowPath(L, y, segW, rowH, 4),
+            fill: OC[i],
+          });
+          bindTip(
+            p,
+            `<b>${n}</b><br>${num(v)} users in April<br>${num(MAR.fu[i])} users in March`,
+          );
+          s.appendChild(p);
+          s.appendChild(
+            el(
+              "text",
+              { x: L + segW + 10, y: y + rowH / 2 + 5, class: "v" },
+              num(v) + " users",
+            ),
+          );
+          if (i < STEPS.length - 1) {
+            const cur = rate(APR, i),
+              prev = rate(MAR, i),
+              worse = cur < prev;
+            const cy = y + rowH + gap / 2 + 2;
+            s.appendChild(
+              el(
+                "text",
+                {
+                  x: L,
+                  y: cy + 4,
+                  class: "v",
+                  style:
+                    "font-size:12px;fill:" +
+                    (worse ? "var(--down)" : "var(--up)"),
+                },
+                (worse ? "▼ " : "▲ ") + cur.toFixed(2) + "% advanced in April",
+              ),
+            );
+            s.appendChild(
+              el(
+                "text",
+                { x: L + 180, y: cy + 4 },
+                "vs " + prev.toFixed(2) + "% in March",
+              ),
+            );
+          }
+        });
+        $("#c-funnel").appendChild(s);
+      })();
+
+      /* ---------- funnel step small multiples ---------- */
+      (function steps() {
+        const defs = [
+          "View to cart",
+          "Cart to checkout",
+          "Checkout to payment",
+          "Payment to purchase",
+        ];
+        const host = $("#c-steps");
+        defs.forEach((t, si) => {
+          const vals = FM.map((m) => rate(m, si)),
+            n = vals.length;
+          const card = document.createElement("div");
+          card.className = "card";
+          const last = vals[n - 1],
+            prev = vals[n - 2],
+            up = last >= prev;
+          card.innerHTML = `<p class="ctitle">${t}</p>
+      <p class="csub"><span class="${up ? "up" : "down"}">${up ? "▲" : "▼"} ${last.toFixed(2)}%</span> in April · ${prev.toFixed(2)}% in March</p>`;
+          const w = 220,
+            h = 86,
+            pad = 16;
+          const s = svg(w, h);
+          const mn = Math.min(...vals) * 0.9,
+            mx = Math.max(...vals) * 1.05;
+          const X = (i) => (i / (n - 1)) * (w - pad * 2) + pad;
+          const Y = (v) => h - 20 - ((v - mn) / (mx - mn)) * (h - 34);
+          s.appendChild(
+            el("line", {
+              x1: 0,
+              x2: w,
+              y1: h - 20,
+              y2: h - 20,
+              class: "axisline",
+            }),
+          );
+          s.appendChild(
+            el("path", {
+              d: vals
+                .map((v, i) => (i ? "L" : "M") + X(i) + " " + Y(v))
+                .join(" "),
+              fill: "none",
+              stroke: "var(--s1)",
+              "stroke-width": 2,
+              "stroke-linecap": "round",
+              "stroke-linejoin": "round",
+            }),
+          );
+          vals.forEach((v, i) => {
+            const c = el("circle", {
+              cx: X(i),
+              cy: Y(v),
+              r: i === n - 1 ? 4.5 : 3.2,
+              fill: i === n - 1 ? "var(--s1)" : "var(--surface)",
+              stroke: "var(--s1)",
+              "stroke-width": 2,
+            });
+            bindTip(
+              c,
+              `<b>${FM[i].label}</b><br>${v.toFixed(2)}% of users advanced`,
+            );
+            s.appendChild(c);
+            s.appendChild(
+              el(
+                "text",
+                {
+                  x: X(i),
+                  y: h - 6,
+                  "text-anchor": "middle",
+                  style: "font-size:10.5px",
+                },
+                FM[i].name,
+              ),
+            );
+          });
+          card.appendChild(s);
+          host.appendChild(card);
+        });
+      })();
+      (function recover() {
+        const buyers =
+          (((((APR.fu[1] * rate(MAR, 1)) / 100) * rate(APR, 2)) / 100) *
+            rate(APR, 3)) /
+          100;
+        const extra = buyers - APR.fu[4];
+        $("#recover").textContent =
+          "About +" +
+          Math.round(extra) +
+          " buyers · " +
+          money(extra * APR.aov) +
+          " left on the table in April";
+      })();
+
+      /* ---------- pages diverging ---------- */
+      (function pages() {
+        const rows = DATA.pages
+          .filter((p) => p.change !== null)
+          .sort((a, b) => b.change - a.change);
+        const isNew = DATA.pages.filter((p) => p.change === null);
+        const w = 760,
+          rowH = 30,
+          gap = 8,
+          L = 268,
+          h = rows.length * (rowH + gap) + 34;
+        const s = svg(w, h),
+          mx = Math.max(...rows.map((r) => Math.abs(r.change))) * 1.1;
+        const mid = L + (w - L - 58) / 2,
+          half = (w - L - 58) / 2;
+        s.appendChild(
+          el("line", {
+            x1: mid,
+            x2: mid,
+            y1: 0,
+            y2: rows.length * (rowH + gap),
+            class: "axisline",
+          }),
+        );
+        rows.forEach((r, i) => {
+          const y = i * (rowH + gap),
+            bw = (Math.abs(r.change) / mx) * half;
+          const pos = r.change >= 0;
+          const name = r.path === "/" ? "/ (Homepage)" : r.path;
+          s.appendChild(
+            el(
+              "text",
+              { x: 0, y: y + rowH / 2 + 4, class: "lbl" },
+              name.length > 36 ? name.slice(0, 35) + "…" : name,
+            ),
+          );
+          const p = el("path", {
+            d: pos
+              ? rowPath(mid + 1, y + 5, bw, rowH - 10, 4)
+              : rowPath(mid - 1 - bw, y + 5, bw, rowH - 10, 4),
+            fill: pos ? "var(--pos)" : "var(--neg)",
+          });
+          if (!pos)
+            p.setAttribute(
+              "transform",
+              `rotate(180 ${mid - 1 - bw / 2} ${y + rowH / 2})`,
+            );
+          bindTip(
+            p,
+            `<b>${name}</b><br>${num(r.views)} views in April<br>${num(r.prev)} in March · ${pct(r.change)}<br>${num(r.users)} users · ${r.eng}s average engagement`,
+          );
+          s.appendChild(p);
+          s.appendChild(
+            el(
+              "text",
+              {
+                x: pos ? mid + bw + 9 : mid - bw - 9,
+                y: y + rowH / 2 + 4,
+                "text-anchor": pos ? "start" : "end",
+                class: "v",
+                style:
+                  "font-size:12px;fill:" + (pos ? "var(--up)" : "var(--down)"),
+              },
+              pct(r.change),
+            ),
+          );
+        });
+        const y = rows.length * (rowH + gap);
+        s.appendChild(
+          el(
+            "text",
+            { x: 0, y: y + 20, class: "lbl" },
+            isNew.length
+              ? isNew[0].path +
+                  " - new page, " +
+                  num(isNew[0].views) +
+                  " views in its first month"
+              : "",
+          ),
+        );
+        $("#c-pages").appendChild(s);
+      })();
+
+      /* ---------- quality small multiples ---------- */
+      (function quality() {
+        const defs = [
+          { k: "engRate", t: "Engagement rate", f: (v) => v.toFixed(2) + "%" },
+          {
+            k: "eventsPerSession",
+            t: "Events per session",
+            f: (v) => v.toFixed(2),
+          },
+          {
+            k: "engPerSession",
+            t: "Seconds per session",
+            f: (v) => v.toFixed(0) + "s",
+          },
+        ];
+        const host = $("#c-quality");
+        defs.forEach((d) => {
+          const vals = M.map((m) => m[d.k]);
+          const card = document.createElement("div");
+          card.className = "card";
+          const up = vals[3] >= vals[2];
+          card.innerHTML = `<p class="ctitle">${d.t}</p>
+      <p class="csub"><span class="${up ? "up" : "down"}">${up ? "▲" : "▼"} ${d.f(vals[3])}</span> in April · ${d.f(vals[2])} in March</p>`;
+          const w = 300,
+            h = 110,
+            pad = 22;
+          const s = svg(w, h);
+          const mn = Math.min(...vals) * 0.94,
+            mx = Math.max(...vals) * 1.04;
+          const X = (i) => (i / 3) * (w - pad * 2) + pad;
+          const Y = (v) => h - 24 - ((v - mn) / (mx - mn)) * (h - 42);
+          s.appendChild(
+            el("line", {
+              x1: 0,
+              x2: w,
+              y1: h - 24,
+              y2: h - 24,
+              class: "axisline",
+            }),
+          );
+          s.appendChild(
+            el("path", {
+              d: vals
+                .map((v, i) => (i ? "L" : "M") + X(i) + " " + Y(v))
+                .join(" "),
+              fill: "none",
+              stroke: "var(--s1)",
+              "stroke-width": 2,
+              "stroke-linecap": "round",
+              "stroke-linejoin": "round",
+            }),
+          );
+          vals.forEach((v, i) => {
+            const c = el("circle", {
+              cx: X(i),
+              cy: Y(v),
+              r: i === 3 ? 4.5 : 3.2,
+              fill: i === 3 ? "var(--s1)" : "var(--surface)",
+              stroke: "var(--s1)",
+              "stroke-width": 2,
+            });
+            bindTip(c, `<b>${M[i].label}</b><br>${d.f(v)}`);
+            s.appendChild(c);
+            s.appendChild(
+              el(
+                "text",
+                {
+                  x: X(i),
+                  y: h - 7,
+                  "text-anchor": "middle",
+                  style: "font-size:11px",
+                },
+                M[i].name,
+              ),
+            );
+          });
+          card.appendChild(s);
+          host.appendChild(card);
+        });
+      })();
+
+      /* ---------- actions ---------- */
+      const ACTS = [
+        {
+          h: "Repair cart to checkout",
+          p:
+            "The share of cart users who started checkout fell from " +
+            rate(MAR, 1).toFixed(2) +
+            "% in March to " +
+            rate(APR, 1).toFixed(2) +
+            "% in April. " +
+            num(APR.fu[1]) +
+            " users added to cart and only " +
+            num(APR.fu[2]) +
+            " began checkout. Check when shipping cost and delivery-date restrictions first become visible.",
+          t: ["Highest value", "This cycle"],
+          hi: true,
+        },
+        {
+          h: "Check the payment step",
+          p:
+            "The share of users who purchased after entering payment details fell from " +
+            rate(MAR, 3).toFixed(2) +
+            "% in March to " +
+            rate(APR, 3).toFixed(2) +
+            "% in April, back to February's level. " +
+            num(APR.fu[3] - APR.fu[4]) +
+            " users did not finish. Confirm with the payment provider whether this is technical.",
+          t: ["Low volume", "This cycle"],
+        },
+        {
+          h: "Sustain the organic recovery",
+          p:
+            "Organic search sessions grew 5.01% in April against March, and the channel is now narrowly the largest by sessions. Build out the new Bluzu page, which drew " +
+            num(DATA.pages.find((p) => p.path.includes("bluzu"))?.views || 0) +
+            " views in its first month, and reinforce the collection pages that grew.",
+          t: ["Compounding", "Ongoing"],
+        },
+        {
+          h: "Recover average order value",
+          p:
+            "Average order fell 7.37% to " +
+            money2(APR.aov) +
+            " in April against March, the lowest of the four months. Gift sets and celebration boxes lost traffic in the same month. Reintroduce them and add bundling on product pages.",
+          t: ["Medium value", "Next cycle"],
+        },
+        {
+          h: "Work the high-yield channels",
+          p:
+            "In April, SMS earned " +
+            money2(
+              byName.Apr && DATA.scatter.find((c) => c.name === "SMS").rps,
+            ) +
+            " per session and Organic Shopping " +
+            money2(
+              DATA.scatter.find((c) => c.name === "Organic Shopping").rps,
+            ) +
+            ", both on under 240 sessions. These are the least-worked channels on the site.",
+          t: ["Upside", "Next cycle"],
+        },
+      ];
+      $("#acts").innerHTML = ACTS.map(
+        (a, i) => `<div class="act">
+  <span class="rank">Priority ${i + 1}</span><h3>${a.h}</h3><p>${a.p}</p>
+  <div class="tags">${a.t.map((t, j) => `<span class="tag${a.hi && j === 0 ? " hi" : ""}">${t}</span>`).join("")}</div>
+</div>`,
+      ).join("");
+
+      /* ---------- data tables ---------- */
+      (function tables() {
+        const T = [];
+        T.push(
+          `<table><caption>Monthly summary</caption><thead><tr><th>Metric</th>${M.map(
+            (m) => `<th>${m.label}</th>`,
+          ).join("")}</tr></thead><tbody>${[
+            ["Window length", M.map((m) => m.days + " days")],
+            ["Sessions", M.map((m) => num(m.sessions))],
+            ["Sessions per day", M.map((m) => m.sessionsPerDay.toFixed(1))],
+            ["Revenue", M.map((m) => money2(m.revenue))],
+            ["Revenue per day", M.map((m) => money2(m.revPerDay))],
+            ["Orders", M.map((m) => num(m.purchases))],
+            ["Average order value", M.map((m) => money2(m.aov))],
+            ["Engagement rate", M.map((m) => m.engRate.toFixed(2) + "%")],
+            ["Events per session", M.map((m) => m.eventsPerSession.toFixed(2))],
+            ["Seconds per session", M.map((m) => m.engPerSession.toFixed(1))],
+            ["Product views, events", M.map((m) => num(m.viewItem))],
+            ["Added to cart, events", M.map((m) => num(m.addToCart))],
+            ["Started checkout, events", M.map((m) => num(m.beginCheckout))],
+            ["Entered payment, events", M.map((m) => num(m.addPayment))],
+            ["View to cart, events", M.map((m) => m.f1.toFixed(2) + "%")],
+            ["Cart to checkout, events", M.map((m) => m.f2.toFixed(2) + "%")],
+            [
+              "Checkout to payment, events",
+              M.map((m) => m.f3.toFixed(2) + "%"),
+            ],
+            ["Payment to order, events", M.map((m) => m.f4.toFixed(2) + "%")],
+            ["View to order, events", M.map((m) => m.e2e.toFixed(2) + "%")],
+            [
+              "Users who viewed a product",
+              M.map((m) => (m.fu ? num(m.fu[0]) : "n/a")),
+            ],
+            [
+              "Users who purchased",
+              M.map((m) => (m.fu ? num(m.fu[4]) : "n/a")),
+            ],
+            [
+              "View to cart, users",
+              M.map((m) => (m.fu ? rate(m, 0).toFixed(2) + "%" : "n/a")),
+            ],
+            [
+              "Cart to checkout, users",
+              M.map((m) => (m.fu ? rate(m, 1).toFixed(2) + "%" : "n/a")),
+            ],
+            [
+              "Checkout to payment, users",
+              M.map((m) => (m.fu ? rate(m, 2).toFixed(2) + "%" : "n/a")),
+            ],
+            [
+              "Payment to purchase, users",
+              M.map((m) => (m.fu ? rate(m, 3).toFixed(2) + "%" : "n/a")),
+            ],
+            [
+              "Viewers who purchased, users",
+              M.map((m) =>
+                m.fu ? ((m.fu[4] / m.fu[0]) * 100).toFixed(2) + "%" : "n/a",
+              ),
+            ],
+          ]
+            .map(
+              (r) =>
+                `<tr><td>${r[0]}</td>${r[1].map((v) => `<td>${v}</td>`).join("")}</tr>`,
+            )
+            .join("")}</tbody></table>`,
+        );
+
+        T.push(
+          `<table><caption>Revenue by channel</caption><thead><tr><th>Channel</th><th>February</th><th>March</th><th>April</th><th>Share, April</th></tr></thead><tbody>${DATA.mix.Apr.rows
+            .map(
+              (r, j) =>
+                `<tr><td>${r.name}</td><td>${money2(DATA.mix.Feb.rows[j].revenue)}</td><td>${money2(
+                  DATA.mix.Mar.rows[j].revenue,
+                )}</td><td>${money2(r.revenue)}</td><td>${r.share}%</td></tr>`,
+            )
+            .join(
+              "",
+            )}<tr><td>Total</td><td>${money2(DATA.mix.Feb.total)}</td><td>${money2(DATA.mix.Mar.total)}</td><td>${money2(DATA.mix.Apr.total)}</td><td>100%</td></tr></tbody></table>`,
+        );
+
+        T.push(
+          `<table><caption>Channel detail, April</caption><thead><tr><th>Channel</th><th>Sessions</th><th>Revenue</th><th>Per session</th><th>Engagement</th><th>Orders</th></tr></thead><tbody>${DATA.scatter
+            .map(
+              (c) =>
+                `<tr><td>${c.name}</td><td>${num(c.sessions)}</td><td>${money2(c.revenue)}</td><td>${money2(
+                  c.rps,
+                )}</td><td>${DATA.channels.Apr[c.name].engRate.toFixed(2)}%</td><td>${DATA.channels.Apr[c.name].keyEvents}</td></tr>`,
+            )
+            .join("")}</tbody></table>`,
+        );
+
+        T.push(
+          `<table><caption>Top pages, April against March</caption><thead><tr><th>Page</th><th>Views, April</th><th>Views, March</th><th>Change</th><th>Users</th><th>Engagement</th></tr></thead><tbody>${DATA.pages
+            .map(
+              (p) =>
+                `<tr><td>${p.path}</td><td>${num(p.views)}</td><td>${p.change === null ? "new" : num(p.prev)}</td><td>${
+                  p.change === null ? "new" : pct(p.change)
+                }</td><td>${num(p.users)}</td><td>${p.eng}s</td></tr>`,
+            )
+            .join("")}</tbody></table>`,
+        );
+
+        $("#tables").innerHTML = T.join("");
+      })();
+
+      /* ---------- theme toggle ---------- */
+      (function theme() {
+        const b = $("#theme"),
+          root = document.documentElement;
+        let saved = null;
+        try {
+          saved = localStorage.getItem("rc-theme");
+        } catch (e) {}
+        if (saved) root.setAttribute("data-theme", saved);
+        const dark = () =>
+          (root.getAttribute("data-theme") ||
+            (matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light")) === "dark";
+        const sync = () => (b.textContent = dark() ? "Light" : "Dark");
+        sync();
+        b.addEventListener("click", () => {
+          const next = dark() ? "light" : "dark";
+          root.setAttribute("data-theme", next);
+          try {
+            localStorage.setItem("rc-theme", next);
+          } catch (e) {}
+          sync();
+        });
+      })();
+    </script>
+  </body>
+</html>
